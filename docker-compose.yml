@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  style-transfer-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./assets:/app/assets
+      - ./style_transfer.db:/app/style_transfer.db
+    environment:
+      - DATABASE_URL=sqlite:///style_transfer.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  streamlit-ui:
+    build: .
+    command: streamlit run src/ui/streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./assets:/app/assets
+      - ./style_transfer.db:/app/style_transfer.db
+    environment:
+      - DATABASE_URL=sqlite:///style_transfer.db
+    restart: unless-stopped
+    depends_on:
+      - style-transfer-api
+
+volumes:
+  uploads:
+  outputs:
+  assets:
